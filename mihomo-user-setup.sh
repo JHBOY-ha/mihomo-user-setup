@@ -66,6 +66,39 @@ title()   { echo -e "\n${CYAN}==== $* ====${NC}"; }
 # 工具函数
 # ============================================================
 
+normalize_sub_url() {
+    local url="$*"
+
+    url="${url#"${url%%[![:space:]]*}"}"
+    url="${url%"${url##*[![:space:]]}"}"
+
+    if [[ ${#url} -ge 2 ]]; then
+        if [[ "${url:0:1}" == "'" && "${url: -1}" == "'" ]]; then
+            url="${url:1:${#url}-2}"
+        elif [[ "${url:0:1}" == '"' && "${url: -1}" == '"' ]]; then
+            url="${url:1:${#url}-2}"
+        fi
+    fi
+
+    printf '%s\n' "$url"
+}
+
+is_suspicious_sub_url() {
+    local url="$1"
+
+    [[ "$url" == http://* || "$url" == https://* ]] || return 1
+    [[ "$url" == *\?* ]] || return 1
+    [[ "$url" == *"&"* || "$url" == *"%26"* ]] && return 1
+
+    case "$url" in
+        *target=*|*insert=*|*emoji=*|*udp=*|*filename=*|*url=*|*token=*|*subscribe*|*sub?*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
 detect_arch() {
     local arch
     arch=$(uname -m)
@@ -389,9 +422,16 @@ download_ui() {
 # sub - 设置订阅链接并拉取配置
 # ============================================================
 do_sub() {
-    local url="${1:-}"
+    local url
+    url=$(normalize_sub_url "$@")
     if [[ -z "$url" ]]; then
         error "请提供订阅链接: bash $0 sub <URL>"
+        exit 1
+    fi
+
+    if is_suspicious_sub_url "$url"; then
+        error "检测到订阅链接可能在 & 处被 shell 截断，请用引号包裹完整链接"
+        echo -e "  正确示例：${CYAN}bash $0 sub 'https://example.com/sub?target=clash&insert=true'${NC}"
         exit 1
     fi
 
@@ -412,8 +452,14 @@ do_sub_update() {
     fi
 
     local url
-    url=$(cat "$MIHOMO_SUB_FILE")
+    url=$(normalize_sub_url "$(cat "$MIHOMO_SUB_FILE")")
     load_env
+
+    if is_suspicious_sub_url "$url"; then
+        error "当前保存的订阅链接疑似不完整，请重新设置并使用引号包裹完整链接"
+        echo -e "  重新设置：${CYAN}bash $0 sub 'https://example.com/sub?target=clash&insert=true'${NC}"
+        exit 1
+    fi
 
     title "更新订阅配置"
     info "下载订阅配置..."
