@@ -99,6 +99,30 @@ is_suspicious_sub_url() {
     return 1
 }
 
+get_shell_rc() {
+    local login_shell="${SHELL##*/}"
+
+    case "$login_shell" in
+        zsh) echo "$HOME/.zshrc" ;;
+        bash) echo "$HOME/.bashrc" ;;
+        *)
+            if [[ -f "$HOME/.zshrc" ]]; then
+                echo "$HOME/.zshrc"
+            else
+                echo "$HOME/.bashrc"
+            fi
+            ;;
+    esac
+}
+
+remove_mihomo_shell_aliases() {
+    local shell_rc="$1"
+
+    [[ -f "$shell_rc" ]] || return 0
+
+    sed -i '/# >>> mihomo user proxy >>>/,/# <<< mihomo user proxy <<</d' "$shell_rc"
+}
+
 detect_arch() {
     local arch
     arch=$(uname -m)
@@ -769,11 +793,9 @@ do_uninstall() {
     rm -rf "$MIHOMO_HOME"
 
     # 清理 shell 配置
-    local shell_rc="$HOME/.bashrc"
-    [[ -n "${ZSH_VERSION:-}" ]] && shell_rc="$HOME/.zshrc"
-    if [[ -f "$shell_rc" ]]; then
-        sed -i '/# >>> mihomo user proxy >>>/,/# <<< mihomo user proxy <<</d' "$shell_rc"
-    fi
+    local shell_rc
+    shell_rc=$(get_shell_rc)
+    remove_mihomo_shell_aliases "$shell_rc"
 
     info "卸载完成"
 }
@@ -784,13 +806,11 @@ do_uninstall() {
 setup_shell_aliases() {
     load_env
 
-    local shell_rc="$HOME/.bashrc"
-    [[ -n "${ZSH_VERSION:-}" ]] && shell_rc="$HOME/.zshrc"
+    local shell_rc
+    shell_rc=$(get_shell_rc)
 
     # 先删除旧的
-    if [[ -f "$shell_rc" ]]; then
-        sed -i '/# >>> mihomo user proxy >>>/,/# <<< mihomo user proxy <<</d' "$shell_rc"
-    fi
+    remove_mihomo_shell_aliases "$shell_rc"
 
     cat >> "$shell_rc" << 'ALIASES_EOF'
 # >>> mihomo user proxy >>>
