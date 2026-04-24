@@ -120,7 +120,51 @@ remove_mihomo_shell_aliases() {
 
     [[ -f "$shell_rc" ]] || return 0
 
-    sed -i '/# >>> mihomo user proxy >>>/,/# <<< mihomo user proxy <<</d' "$shell_rc"
+    local tmp_rc
+    tmp_rc=$(mktemp /tmp/mihomo_shell_rc.XXXXXX)
+
+    awk '
+        BEGIN {
+            start_marker = "# >>> mihomo user proxy >>>"
+            end_marker = "# <<< mihomo user proxy <<<"
+            in_block = 0
+        }
+        {
+            start = index($0, start_marker)
+            end = index($0, end_marker)
+
+            if (!in_block && start) {
+                prefix = substr($0, 1, start - 1)
+                if (prefix != "") {
+                    print prefix
+                }
+                in_block = 1
+                if (end && end >= start) {
+                    suffix = substr($0, end + length(end_marker))
+                    if (suffix != "") {
+                        print suffix
+                    }
+                    in_block = 0
+                }
+                next
+            }
+
+            if (in_block) {
+                if (end) {
+                    suffix = substr($0, end + length(end_marker))
+                    if (suffix != "") {
+                        print suffix
+                    }
+                    in_block = 0
+                }
+                next
+            }
+
+            print
+        }
+    ' "$shell_rc" > "$tmp_rc"
+
+    mv "$tmp_rc" "$shell_rc"
 }
 
 detect_arch() {
@@ -811,6 +855,8 @@ setup_shell_aliases() {
 
     # 先删除旧的
     remove_mihomo_shell_aliases "$shell_rc"
+
+    [[ -s "$shell_rc" ]] && printf '\n' >> "$shell_rc"
 
     cat >> "$shell_rc" << 'ALIASES_EOF'
 # >>> mihomo user proxy >>>
