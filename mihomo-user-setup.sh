@@ -91,7 +91,7 @@ is_suspicious_sub_url() {
     [[ "$url" == *"&"* || "$url" == *"%26"* ]] && return 1
 
     case "$url" in
-        *target=*|*insert=*|*emoji=*|*udp=*|*filename=*|*url=*|*token=*|*subscribe*|*sub?*)
+        *target=*|*insert=*|*emoji=*|*udp=*|*filename=*|*url=*)
             return 0
             ;;
     esac
