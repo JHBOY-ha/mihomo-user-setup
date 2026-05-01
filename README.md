@@ -104,7 +104,7 @@ bash mihomo-user-setup.sh sub "<你的订阅链接>"
 bash mihomo-user-setup.sh start
 ```
 
-启动成功后，脚本会输出 HTTP、SOCKS5、混合代理和 Dashboard 地址。
+启动成功后，脚本会输出 HTTP、SOCKS5、混合代理、Dashboard 地址和 Secret。
 
 ### 5. 启用开机自启
 
@@ -197,6 +197,12 @@ proxy1_off
 
 ```text
 http://127.0.0.1:19090/ui
+```
+
+查看当前 Dashboard 地址和 Secret：
+
+```bash
+bash mihomo-user-setup.sh status
 ```
 
 如果本地 UI 下载失败，脚本会提示使用在线面板：

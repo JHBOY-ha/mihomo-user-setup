@@ -199,6 +199,15 @@ SECRET=$SECRET
 EOF
 }
 
+print_dashboard_access() {
+    echo -e "  Dashboard: ${CYAN}http://0.0.0.0:${CONTROLLER_PORT}/ui${NC}"
+    if [[ -n "${SECRET:-}" ]]; then
+        echo -e "  Secret:    ${CYAN}${SECRET}${NC}"
+    else
+        echo -e "  Secret:    ${YELLOW}(未设置)${NC}"
+    fi
+}
+
 try_download() {
     local url="$1"
     local output="$2"
@@ -426,6 +435,9 @@ do_install() {
     echo ""
     info "安装完成！接下来请设置订阅："
     echo -e "  ${CYAN}bash $0 sub <你的订阅链接>${NC}"
+    echo ""
+    info "Dashboard 访问方式："
+    print_dashboard_access
 }
 
 # ============================================================
@@ -688,8 +700,7 @@ do_start() {
         echo -e "  HTTP  代理: ${CYAN}http://127.0.0.1:${HTTP_PORT}${NC}"
         echo -e "  SOCKS 代理: ${CYAN}socks5://127.0.0.1:${SOCKS_PORT}${NC}"
         echo -e "  混合  代理: ${CYAN}http://127.0.0.1:${MIXED_PORT}${NC}"
-        echo -e "  Dashboard: ${CYAN}http://0.0.0.0:${CONTROLLER_PORT}/ui${NC}"
-        echo -e "  Secret:    ${CYAN}${SECRET}${NC}"
+        print_dashboard_access
         echo ""
         echo -e "  终端开启代理: ${GREEN}proxy1_on${NC}"
         echo -e "  终端关闭代理: ${GREEN}proxy1_off${NC}"
@@ -798,7 +809,7 @@ do_status() {
     echo -e "  HTTP:    127.0.0.1:${HTTP_PORT}"
     echo -e "  SOCKS:   127.0.0.1:${SOCKS_PORT}"
     echo -e "  混合:    127.0.0.1:${MIXED_PORT}"
-    echo -e "  面板:    http://0.0.0.0:${CONTROLLER_PORT}/ui"
+    print_dashboard_access
 
     if [[ -f "$MIHOMO_SUB_FILE" ]]; then
         echo -e "  订阅:    已设置"
